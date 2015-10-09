@@ -1,12 +1,13 @@
 def convert_to_bgn(price, currency)
-  if currency == :bgn
-    price
-  elsif currency == :usd
-    (price * 1.7408).round(2)
-  elsif currency == :eur
-    (price * 1.9557).round(2)
-  elsif currency == :gbp
-    (price * 2.6415).round(2)
+  case currency
+    when :bgn
+      price.round(2)
+    when :usd
+      (price * 1.7408).round(2)
+    when :eur
+      (price * 1.9557).round(2)
+    when :gbp
+      (price * 2.6415).round(2)
   end
 end
 
