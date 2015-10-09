@@ -1,13 +1,15 @@
 def convert_to_bgn(price, currency)
+  in_leva = {dollars: 1.7408, euro: 1.9557, pounds: 2.6415}
+
   case currency
     when :bgn
       price.round(2)
     when :usd
-      (price * 1.7408).round(2)
+      (price * in_leva[:dollars]).round(2)
     when :eur
-      (price * 1.9557).round(2)
+      (price * in_leva[:euro]).round(2)
     when :gbp
-      (price * 2.6415).round(2)
+      (price * in_leva[:pounds]).round(2)
   end
 end
 
