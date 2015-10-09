@@ -1,16 +1,8 @@
-def convert_to_bgn(price, currency)
-  in_leva = {dollars: 1.7408, euro: 1.9557, pounds: 2.6415}
+EXCHANGE_RATES = {bgn: 1, usd: 1.7408, eur: 1.9557, gbp: 2.6415}
+PRECISION = 2
 
-  case currency
-    when :bgn
-      price.round(2)
-    when :usd
-      (price * in_leva[:dollars]).round(2)
-    when :eur
-      (price * in_leva[:euro]).round(2)
-    when :gbp
-      (price * in_leva[:pounds]).round(2)
-  end
+def convert_to_bgn(price, currency)
+  (price * EXCHANGE_RATES[currency]).round(PRECISION)
 end
 
 def compare_prices(first_price, first_currency, second_price, second_currency)
