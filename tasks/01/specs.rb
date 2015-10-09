@@ -2,6 +2,10 @@ describe '#convert_to_bgn' do
   it 'converts usd' do
     expect(convert_to_bgn(1000, :usd)).to eq 1740.8
   end
+
+  it 'converts gbp' do
+    expect(convert_to_bgn(1000, :gbp)).to eq 2641.5
+  end
 end
 
 describe '#compare_prices' do
