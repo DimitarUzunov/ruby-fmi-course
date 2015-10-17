@@ -19,12 +19,8 @@ def generate_random_food(dimensions)
 end
 
 def new_food(food, snake, dimensions)
-  if (food.length + snake.length) >= dimensions[:width] * dimensions[:height]
-    return []
-  end
-
   random_food = generate_random_food(dimensions)
-  while food.include? random_food or snake.include? random_food do
+  while food.include? random_food or snake.include? random_food
     random_food = generate_random_food(dimensions)
   end
 
