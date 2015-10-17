@@ -50,6 +50,11 @@ describe '#new_food' do
   it 'generates new food' do
     expect(new_food([[0, 0]], [[0, 1], [1, 1]], {width: 2, height: 2})).
       to eq [1, 0]
+
+    expect(new_food([[0, 0], [0, 1], [0, 2], [0, 3], [1, 2]],
+                    [[1, 0], [1, 1], [2, 1], [2, 2], [2, 3], [1, 3]],
+                    {width: 3, height: 4})).
+    to eq [2, 0]
   end
 end
 
@@ -83,7 +88,7 @@ describe '#obstacle_ahead?' do
 
     expect(obstacle_ahead?([[1, 1], [1, 2], [2, 2], [2, 3], [1, 3]], [0, -1],
                            {width: 10, height: 10})).
-      to eq true
+    to eq true
   end
 end
 
@@ -99,10 +104,10 @@ describe '#danger?' do
   it 'returns true if position in front of snake is a part of snake' do
     expect(danger?([[1, 1], [1, 2], [2, 2], [2, 3], [1, 3]], [0, -1],
                    {width: 10, height: 10})).
-      to eq true
+    to eq true
 
     expect(danger?([[1, 1], [1, 2], [2, 2], [2, 3], [2, 4], [1, 4]], [0, -1],
                    {width: 10, height: 10})).
-      to eq true
+    to eq true
   end
 end
