@@ -12,19 +12,15 @@ def move(snake, direction)
   moved_snake
 end
 
-def generate_random_food(dimensions)
-  xs = rand(dimensions[:width])
-  ys = rand(dimensions[:height])
-  [xs, ys]
-end
-
 def new_food(food, snake, dimensions)
-  random_food = generate_random_food(dimensions)
-  while food.include? random_food or snake.include? random_food
-    random_food = generate_random_food(dimensions)
-  end
+  occupied_positions = food + snake
 
-  random_food
+  xs = *(0...dimensions[:width])
+  ys = *(0...dimensions[:height])
+  all_positions = xs.product(ys)
+
+  free_positions = all_positions - occupied_positions
+  free_positions.sample
 end
 
 def not_in_bounds?(position, dimensions)
