@@ -1,5 +1,7 @@
 def snake_ahead_position(snake, direction)
-  [snake.last, direction].transpose.map { |coordinates| coordinates.reduce(:+) }
+  snake.last.zip(direction).map do |snake_coordinate, direction_coordinate|
+    snake_coordinate + direction_coordinate
+  end
 end
 
 def grow(snake, direction)
