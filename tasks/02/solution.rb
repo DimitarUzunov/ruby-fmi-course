@@ -9,26 +9,22 @@ def grow(snake, direction)
 end
 
 def move(snake, direction)
-  moved_snake = grow(snake, direction)
-  moved_snake.shift
-  moved_snake
+  grow(snake, direction).drop(1)
 end
 
 def new_food(food, snake, dimensions)
-  occupied_positions = food + snake
-
-  xs = *(0...dimensions[:width])
-  ys = *(0...dimensions[:height])
+  xs, ys = (0...dimensions[:width]).to_a, (0...dimensions[:height]).to_a
   all_positions = xs.product(ys)
+
+  occupied_positions = food + snake
 
   free_positions = all_positions - occupied_positions
   free_positions.sample
 end
 
 def not_in_bounds?(position, dimensions)
-  xs = position[0]
-  ys = position[1]
-  xs < 0 or xs >= dimensions[:width] or ys < 0 or ys >= dimensions[:height]
+  x, y = position
+  x < 0 or x >= dimensions[:width] or y < 0 or y >= dimensions[:height]
 end
 
 def wall_ahead?(snake, direction, dimensions)
