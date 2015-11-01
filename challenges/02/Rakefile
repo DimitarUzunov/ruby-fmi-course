@@ -1,0 +1,9 @@
+task default: %w[test]
+
+task :test do
+  sh 'skeptic --line-length 80 --no-semicolons --no-trailing-whitespace --check-syntax --no-global-variables --naming-conventions solution.rb'
+
+  puts "\n"
+
+  sh 'rspec spec.rb --require ./solution.rb --colour --format documentation'
+end
