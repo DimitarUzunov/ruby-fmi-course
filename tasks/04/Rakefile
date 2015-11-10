@@ -1,0 +1,9 @@
+task default: %w[test]
+
+task :test do
+  sh "skeptic --lines-per-method 8 --line-length 80 --max-nesting-depth 2 --methods-per-class 16 --no-semicolons --no-trailing-whitespace --check-syntax --no-global-variables --english-words-for-names='WarDeck BeloteDeck SixtySixDeck belote tierce quarte carre' --naming-conventions --max-method-arity 4 --spaces-around-operators solution.rb"
+
+  puts "\n"
+
+  sh 'rspec spec.rb --require ./solution.rb --colour --format documentation'
+end
