@@ -1,24 +1,38 @@
-class Card
-  attr_reader :rank, :suit
-
-  def initialize(rank, suit)
-    @rank, @suit = rank, suit
-  end
-
+class Card < Struct.new(:rank, :suit)
   def to_s
-    rank.to_s.capitalize + ' of ' + suit.to_s.capitalize
-  end
-
-  def ==(other)
-    rank == other.rank and suit == other.suit
+    "#{rank.to_s.capitalize} of #{suit.to_s.capitalize}"
   end
 end
 
 class Deck
+  class Hand
+    attr_reader :cards
+
+    def initialize(game, cards)
+      @game = game
+      @cards = cards
+    end
+
+    def size
+      @cards.size
+    end
+  end
+
   include Enumerable
 
-  def initialize(cards = generate_deck)
-    @cards = cards
+  def initialize(suits, ranks, cards)
+    @suits = suits
+    @ranks = ranks
+
+    if cards
+      @cards = cards
+    else
+      @cards = @suits.product(@ranks).map { |suit, rank| Card.new(rank, suit) }
+    end
+  end
+
+  def each(&block)
+    @cards.each(&block)
   end
 
   def size
@@ -45,158 +59,182 @@ class Deck
     @cards.shuffle!
   end
 
+  def compare_cards(card_one, card_two)
+    card_grade(card_one) <=> card_grade(card_two)
+  end
+
   def sort
-    suits_order = {}
-    suits.each_with_index { |suit, index| suits_order[suit] = index }
-
-    ranks_order = {}
-    ranks.each_with_index { |rank, index| ranks_order[rank] = -index }
-
-    @cards.sort_by! { |card| [suits_order[card.suit], ranks_order[card.rank]] }
+    @cards.sort_by! { |card| card_grade(card) }
+    @cards.reverse!
   end
 
   def to_s
     @cards.map(&:to_s).join("\n")
   end
 
-  def deal(cards_count)
-    cards_in_hand = @cards.shift(cards_count)
-  end
-
   private
 
-  def suits
-    [:spades, :hearts, :diamonds, :clubs]
-  end
+  def card_grade(card)
+    suit_grade = @suits.find_index(card.suit)
+    rank_grade = @ranks.find_index(card.rank)
 
-  def ranks
-    [2, 3, 4, 5, 6, 7, 8, 9, 10, :jack, :queen, :king, :ace]
-  end
-
-  def generate_deck
-    ranks.product(suits).map { |rank, suit| Card.new(rank, suit) }
+    suit_grade * @ranks.size + rank_grade
   end
 end
 
 class WarDeck < Deck
+  SUITS = [:clubs, :diamonds, :hearts, :spades]
+  RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, :jack, :queen, :king, :ace]
+
+  def initialize(cards = nil)
+    super(SUITS, RANKS, cards)
+  end
+
   def deal
-    WarHand.new(super(26))
-  end
-end
+    cards_in_hand = @cards.shift(Hand::INITIAL_SIZE)
 
-class WarHand < WarDeck
-  def play_card
-    draw_bottom_card
+    Hand.new(self, cards_in_hand)
   end
 
-  def allow_face_up?
-    size <= 3
+  class Hand < Deck::Hand
+    INITIAL_SIZE = 26
+
+    def play_card
+      @cards.pop
+    end
+
+    def allow_face_up?
+      @cards.size <= 3
+    end
   end
 end
 
 class BeloteDeck < Deck
+  SUITS = [:clubs, :diamonds, :hearts, :spades]
+  RANKS = [7, 8, 9, 10, :jack, :queen, :king, :ace]
+
+  def initialize(cards = nil)
+    super(SUITS, RANKS, cards)
+  end
+
   def deal
-    BeloteHand.new(super(8))
+    cards_in_hand = @cards.shift(Hand::INITIAL_SIZE)
+
+    Hand.new(self, cards_in_hand)
   end
 
-  private
+  class Hand < Deck::Hand
+    INITIAL_SIZE = 8
 
-  def ranks
-    [7, 8, 9, :jack, :queen, :king, 10, :ace]
-  end
-end
+    def highest_of_suit(suit)
+      @cards.select { |card| card.suit == suit }.sort do |card_one, card_two|
+        @game.compare_cards(card_one, card_two)
+      end.last
+    end
 
-module CardMethods
-  def same_suit?(cards)
-    cards.all? { |card| card.suit == cards.first.suit }
-  end
+    def belote?
+      SUITS.any? do |suit|
+        has_queen = @cards.include?(Card.new(:queen, suit))
+        has_king = @cards.include?(Card.new(:king, suit))
 
-  def belote_pair?(pair)
-    pair.first.rank == :king and pair.last.rank == :queen and same_suit?(pair)
-  end
+        has_queen and has_king
+      end
+    end
 
-  def sequential?(cards)
-    ranks_of_cards = cards.map(&:rank)
-    ranks.reverse.each_cons(cards.size).any? { |ranks| ranks == ranks_of_cards }
-  end
+    def tierce?
+      consecutive_cards?(3)
+    end
 
-  def n_sequential_cards?(n)
-    sort.each_cons(n).any? { |cards| sequential?(cards) and same_suit?(cards) }
-  end
+    def quarte?
+      consecutive_cards?(4)
+    end
 
-  def carre_of_rank?(rank)
-    @cards.count { |card| card.rank == rank } == 4
-  end
+    def quint?
+      consecutive_cards?(5)
+    end
 
-  def card_of_trump_suit?(card, trump_suit)
-    card.suit == trump_suit
-  end
+    def carre_of_jacks?
+      carre?(:jack)
+    end
 
-  def twenty_pair?(pair, trump_suit)
-    belote_pair?(pair) and not card_of_trump_suit?(pair.first, trump_suit)
-  end
+    def carre_of_nines?
+      carre?(9)
+    end
 
-  def forty_pair?(pair, trump_suit)
-    belote_pair?(pair) and card_of_trump_suit?(pair.first, trump_suit)
-  end
-end
+    def carre_of_aces?
+      carre?(:ace)
+    end
 
-class BeloteHand < BeloteDeck
-  include CardMethods
+    private
 
-  def highest_of_suit(suit)
-    sort.detect { |card| card.suit == suit }
-  end
+    def carre?(card_rank)
+      @cards.select { |card| card.rank == card_rank }.size == 4
+    end
 
-  def belote?
-    sort.each_cons(2).any? { |pair| belote_pair?(pair) }
-  end
+    def consecutive_cards?(card_count)
+      sorted_cards = sort_by_rank(@cards)
 
-  def tierce?
-    n_sequential_cards?(3)
-  end
+      SUITS.any? do |suit|
+        cards_of_suit = sorted_cards.select { |card| card.suit == suit }
 
-  def quarte?
-    n_sequential_cards?(4)
-  end
+        next false if cards_of_suit.size < card_count
 
-  def quint?
-    n_sequential_cards?(5)
-  end
+        cards_of_suit.each_cons(card_count).any? do |cards|
+          consecutive_ranks?(cards)
+        end
+      end
+    end
 
-  def carre_of_jacks?
-    carre_of_rank?(:jack)
-  end
+    def consecutive_ranks?(cards)
+      cards.each_cons(2).all? do |card_one, card_two|
+        index_of_rank(card_one.rank) + 1 == index_of_rank(card_two.rank)
+      end
+    end
 
-  def carre_of_nines?
-    carre_of_rank?(9)
-  end
+    def sort_by_rank(cards)
+      cards.sort_by { |card| index_of_rank(card.rank) }
+    end
 
-  def carre_of_aces?
-    carre_of_rank?(:ace)
+    def index_of_rank(rank)
+      RANKS.find_index(rank)
+    end
   end
 end
 
 class SixtySixDeck < Deck
+  SUITS = [:clubs, :diamonds, :hearts, :spades]
+  RANKS = [9, 10, :jack, :queen, :king, :ace]
+
+  def initialize(cards = nil)
+    super(SUITS, RANKS, cards)
+  end
+
   def deal
-    SixtySixHand.new(super(6))
+    cards_in_hand = @cards.shift(Hand::INITIAL_SIZE)
+
+    Hand.new(self, cards_in_hand)
   end
 
-  private
+  class Hand < Deck::Hand
+    INITIAL_SIZE = 6
 
-  def ranks
-    [9, :jack, :queen, :king, 10, :ace]
-  end
-end
+    def twenty?(trump_suit)
+      pair_of_queen_and_king?(SUITS - [trump_suit])
+    end
 
-class SixtySixHand < SixtySixDeck
-  include CardMethods
+    def forty?(trump_suit)
+      pair_of_queen_and_king?([trump_suit])
+    end
 
-  def twenty?(trump_suit)
-    sort.each_cons(2).any? { |pair| twenty_pair?(pair, trump_suit) }
-  end
+    private
 
-  def forty?(trump_suit)
-    sort.each_cons(2).any? { |pair| forty_pair?(pair, trump_suit) }
+    def pair_of_queen_and_king?(allowed_suits)
+      allowed_suits.any? do |suit|
+        has_queen = @cards.include?(Card.new(:queen, suit))
+        has_king = @cards.include?(Card.new(:king, suit))
+
+        has_queen and has_king
+      end
+    end
   end
 end
