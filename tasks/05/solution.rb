@@ -156,7 +156,8 @@ class ObjectStore
     else
       count = @staging_area.size
 
-      branch.active_branch.commits << create_commit(message)
+      branch.active_branch.commits << Commit.new(message, commit_objects)
+      clear_staging_area
 
       Success.new(true, "#{message}\n\t#{count} objects changed", head.result)
     end
@@ -205,14 +206,16 @@ class ObjectStore
 
   private
 
-  def create_commit(message)
-    objects = (head.success? ? head.result.objects_hash : {}).
-      merge(@staging_area)
-    @staging_area.clear
-
+  def commit_objects
+    head_objects = head.success? ? head.result.objects_hash : {}
+    objects = head_objects.merge(@staging_area)
     @objects_to_remove.each { |name| objects.delete(name) }
-    @objects_to_remove.clear
 
-    Commit.new(message, objects)
+    objects
+  end
+
+  def clear_staging_area
+    @staging_area.clear
+    @objects_to_remove.clear
   end
 end
